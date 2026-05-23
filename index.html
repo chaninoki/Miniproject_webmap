@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGIS มวลชีวภาพป่าไม้เชียงใหม่</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/shpjs@4.0.4/dist/shp.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header id="app-header">
+    <div id="header-brand">
+        <span class="brand-icon">&#127807;</span>
+        <div class="brand-text">
+            <div class="brand-title">WebGIS มวลชีวภาพป่าไม้เชียงใหม่</div>
+            <div class="brand-sub">วิเคราะห์คาร์บอนสต็อก AGB &amp; CO&#8322; &middot; 2562&#8211;2566</div>
+        </div>
+    </div>
+    <div id="header-actions">
+        <button id="btn-layers" class="hdr-btn active">
+            &#9776;&ensp;ชั้นข้อมูล
+            <span id="layer-count-badge" class="count-badge">6</span>
+        </button>
+        <button id="btn-stats"  class="hdr-btn active">&#128202;&ensp;สถิติ</button>
+        <button id="btn-reset"  class="hdr-btn reset" >&#8635;&ensp;รีเซ็ต</button>
+    </div>
+</header>
+
+<!-- ===== Main Layout ===== -->
+<div id="main-wrap">
+
+    <!-- ── Left Sidebar ── -->
+    <aside id="sidebar">
+
+        <!-- Search -->
+        <div id="sidebar-search">
+            <div id="search-input-row">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" id="geocode-input" placeholder="ค้นหาสถานที่ใน เชียงใหม่...">
+                <button id="search-clear" class="hidden">&#10005;</button>
+            </div>
+            <ul id="geocode-results" class="hidden"></ul>
+        </div>
+
+        <!-- Section: พื้นที่ป่าไม้ -->
+        <div class="sb-section">
+            <div class="sb-sec-hd" data-sec="sec-forest">
+                <span>พื้นที่ป่าไม้</span><span class="sec-arrow">&#9662;</span>
+            </div>
+            <div class="sb-sec-body" id="sec-forest">
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#74c476;"></span>
+                    <span class="sb-label">แผนที่ป่าไม้ 2562</span>
+                    <button class="lyr-opt-btn" data-panel="opt-forest19" title="ตั้งค่าความโปร่งแสง">&#9660;</button>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_forest_2019"><span class="slider"></span></label>
+                </div>
+                <div class="lyr-opt-panel" id="opt-forest19">
+                    <div class="opt-row">
+                        <span class="opt-lbl">&#9728; โปร่งแสง</span>
+                        <input type="range" class="opt-range" data-layer-opacity="lyr_forest_2019" min="0" max="1" step="0.05" value="0.7">
+                        <span class="opt-val">70%</span>
+                    </div>
+                </div>
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#238b45;"></span>
+                    <span class="sb-label">แผนที่ป่าไม้ 2566</span>
+                    <button class="lyr-opt-btn" data-panel="opt-forest23" title="ตั้งค่าความโปร่งแสง">&#9660;</button>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_forest_2023"><span class="slider"></span></label>
+                </div>
+                <div class="lyr-opt-panel" id="opt-forest23">
+                    <div class="opt-row">
+                        <span class="opt-lbl">&#9728; โปร่งแสง</span>
+                        <input type="range" class="opt-range" data-layer-opacity="lyr_forest_2023" min="0" max="1" step="0.05" value="0.7">
+                        <span class="opt-val">70%</span>
+                    </div>
+                </div>
+
+                <div class="sb-item">
+                    <span class="swatch line-sw" style="border-color:#60a5fa;"></span>
+                    <span class="sb-label">ขอบเขตจังหวัด</span>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_province_casing,lyr_province_line" checked><span class="slider"></span></label>
+                </div>
+
+                <div class="sb-item">
+                    <span class="swatch line-sw" style="border-color:#94a3b8;"></span>
+                    <span class="sb-label">ขอบเขตอำเภอ</span>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_amphoe_line" checked><span class="slider"></span></label>
+                </div>
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#41ab5d;opacity:0.55;"></span>
+                    <span class="sb-label">ขอบเขตป่าไม้ (Vector)</span>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_forest_fill,lyr_forest_outline" checked><span class="slider"></span></label>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Section: จุดตัวอย่าง -->
+        <div class="sb-section">
+            <div class="sb-sec-hd" data-sec="sec-pts">
+                <span>จุดตัวอย่าง <span class="section-en">SAMPLE POINTS</span></span>
+                <span class="sec-arrow">&#9662;</span>
+            </div>
+            <div class="sb-sec-body" id="sec-pts">
+
+                <div class="sb-item">
+                    <span class="swatch circle-sw" style="background:#00441b;"></span>
+                    <span class="sb-label">จุดป่าไม้</span>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_point_forest" checked><span class="slider"></span></label>
+                </div>
+
+                <div class="sb-item">
+                    <span class="swatch circle-sw" style="background:#d73027;"></span>
+                    <span class="sb-label">จุดที่ดินเปิด</span>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_point_non_forest" checked><span class="slider"></span></label>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Section: มวลชีวภาพ AGB -->
+        <div class="sb-section">
+            <div class="sb-sec-hd" data-sec="sec-agb">
+                <span>มวลชีวภาพ (AGB)</span><span class="sec-arrow">&#9662;</span>
+            </div>
+            <div class="sb-sec-body" id="sec-agb">
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#a1d99b;"></span>
+                    <span class="sb-label">AGB 2562</span>
+                    <button class="lyr-opt-btn" data-panel="opt-agb19" title="ตั้งค่าความโปร่งแสง">&#9660;</button>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_agb_2019"><span class="slider"></span></label>
+                </div>
+                <div class="lyr-opt-panel" id="opt-agb19">
+                    <div class="opt-row">
+                        <span class="opt-lbl">&#9728; โปร่งแสง</span>
+                        <input type="range" class="opt-range" data-layer-opacity="lyr_agb_2019" min="0" max="1" step="0.05" value="0.7">
+                        <span class="opt-val">70%</span>
+                    </div>
+                </div>
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#006d2c;"></span>
+                    <span class="sb-label">AGB 2566</span>
+                    <button class="lyr-opt-btn" data-panel="opt-agb23" title="ตั้งค่าความโปร่งแสง">&#9660;</button>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_agb_2023"><span class="slider"></span></label>
+                </div>
+                <div class="lyr-opt-panel" id="opt-agb23">
+                    <div class="opt-row">
+                        <span class="opt-lbl">&#9728; โปร่งแสง</span>
+                        <input type="range" class="opt-range" data-layer-opacity="lyr_agb_2023" min="0" max="1" step="0.05" value="0.7">
+                        <span class="opt-val">70%</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Section: คาร์บอน CO₂ -->
+        <div class="sb-section">
+            <div class="sb-sec-hd" data-sec="sec-co2">
+                <span>คาร์บอน (CO&#8322;)</span><span class="sec-arrow">&#9662;</span>
+            </div>
+            <div class="sb-sec-body" id="sec-co2">
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#fdae6b;"></span>
+                    <span class="sb-label">CO&#8322; 2562</span>
+                    <button class="lyr-opt-btn" data-panel="opt-co219" title="ตั้งค่าความโปร่งแสง">&#9660;</button>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_co2_2019"><span class="slider"></span></label>
+                </div>
+                <div class="lyr-opt-panel" id="opt-co219">
+                    <div class="opt-row">
+                        <span class="opt-lbl">&#9728; โปร่งแสง</span>
+                        <input type="range" class="opt-range" data-layer-opacity="lyr_co2_2019" min="0" max="1" step="0.05" value="0.7">
+                        <span class="opt-val">70%</span>
+                    </div>
+                </div>
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#d94801;"></span>
+                    <span class="sb-label">CO&#8322; 2566</span>
+                    <button class="lyr-opt-btn" data-panel="opt-co223" title="ตั้งค่าความโปร่งแสง">&#9660;</button>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_co2_2023"><span class="slider"></span></label>
+                </div>
+                <div class="lyr-opt-panel" id="opt-co223">
+                    <div class="opt-row">
+                        <span class="opt-lbl">&#9728; โปร่งแสง</span>
+                        <input type="range" class="opt-range" data-layer-opacity="lyr_co2_2023" min="0" max="1" step="0.05" value="0.7">
+                        <span class="opt-val">70%</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Section: การเปลี่ยนแปลง -->
+        <div class="sb-section">
+            <div class="sb-sec-hd" data-sec="sec-change">
+                <span>การเปลี่ยนแปลงป่าไม้</span><span class="sec-arrow">&#9662;</span>
+            </div>
+            <div class="sb-sec-body" id="sec-change">
+
+                <div class="sb-item">
+                    <span class="swatch" style="background:#9467bd;"></span>
+                    <span class="sb-label">การเปลี่ยนแปลง 2562&#8211;2566</span>
+                    <button class="lyr-opt-btn" data-panel="opt-change" title="ตั้งค่าความโปร่งแสง">&#9660;</button>
+                    <label class="toggle"><input type="checkbox" data-layer="lyr_change_detect" checked><span class="slider"></span></label>
+                </div>
+                <div class="lyr-opt-panel" id="opt-change">
+                    <div class="opt-row">
+                        <span class="opt-lbl">&#9728; โปร่งแสง</span>
+                        <input type="range" class="opt-range" data-layer-opacity="lyr_change_detect" min="0" max="1" step="0.05" value="0.7">
+                        <span class="opt-val">70%</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- ── Map ── -->
+    <div id="map">
+
+        <!-- Zoom to extent -->
+        <button id="btn-zoom-extent" title="ซูมกลับเชียงใหม่">&#8982;</button>
+
+        <!-- Dynamic map legend -->
+        <div id="map-legend" style="display:none;">
+            <div id="legend-hd">
+                <span>&#9670; สัญลักษณ์</span>
+                <button id="legend-toggle-btn" title="ซ่อน/แสดง">&#9650;</button>
+            </div>
+            <div id="legend-body"></div>
+        </div>
+
+        <!-- Coordinate display bar -->
+        <div id="coord-bar">
+            <span class="coord-icon">&#9432;</span>
+            <span id="coord-latlng">เลื่อน cursor บนแผนที่</span>
+            <span class="coord-sep">|</span>
+            <span id="coord-zoom-lbl">Zoom: 8</span>
+        </div>
+
+    </div>
+
+    <!-- ── Right Stats Panel ── -->
+    <div id="stats-panel">
+
+        <div id="stats-header">&#128202;&ensp;สถิติและข้อมูล</div>
+
+        <div id="stats-tabs">
+            <button class="stab active" data-stab="province">จังหวัด</button>
+            <button class="stab" data-stab="district">อำเภอ</button>
+            <button class="stab" data-stab="model">แบบจำลอง</button>
+            <button class="stab" data-stab="accuracy">ความแม่นยำ</button>
+        </div>
+
+        <!-- Tab: จังหวัด -->
+        <div id="stab-province" class="stab-content active">
+
+            <div class="province-hero">
+                <div class="donut-wrap">
+                    <canvas id="chartCoverage" width="110" height="110"></canvas>
+                    <div class="donut-overlay">
+                        <div class="donut-pct" id="pct-counter">0%</div>
+                        <div class="donut-sub">ป่าไม้ 2566</div>
+                    </div>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hs-val">1,652,873</div>
+                        <div class="hs-lbl">ป่าไม้ 2566 (ha)</div>
+                    </div>
+                    <div class="hero-stat" style="margin-top:8px;">
+                        <div class="hs-val-up">&#9650; 9.1%</div>
+                        <div class="hs-lbl">เพิ่มขึ้นจากปี 2562</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-block">
+                <div class="info-block-title">ภาพรวมจังหวัด &#8211; เชียงใหม่</div>
+                <table class="info-table">
+                    <tr><td>พื้นที่ทั้งหมด</td>       <td class="val-cell">2,212,578 ha</td></tr>
+                    <tr><td>ป่าไม้ 2562</td>           <td class="val-cell">1,515,363 ha <span class="note">(68.5%)</span></td></tr>
+                    <tr><td>ป่าไม้ 2566</td>           <td class="val-cell">1,652,873 ha <span class="up-badge">&#9650;137,510</span></td></tr>
+                    <tr><td>AGB เฉลี่ย 2562</td>       <td class="val-cell">168.45 Mg/ha</td></tr>
+                    <tr><td>AGB เฉลี่ย 2566</td>       <td class="val-cell">173.26 Mg/ha <span class="up-badge">&#9650;4.81</span></td></tr>
+                    <tr><td>CO&#8322; รวม 2562</td>    <td class="val-cell">330.30 M Mg</td></tr>
+                    <tr><td>CO&#8322; รวม 2566</td>    <td class="val-cell">382.42 M Mg <span class="up-badge">&#9650;52.12</span></td></tr>
+                </table>
+            </div>
+
+            <div class="chart-title-sm">AGB และ CO&#8322; ตามประเภทป่าไม้</div>
+            <canvas id="chartForestType" height="170"></canvas>
+            <div class="chart-title-sm" style="margin-top:14px;">10 อำเภอที่มีพื้นที่ป่ามากที่สุด &#8211; AGB เฉลี่ย 2566 (Mg/ha)</div>
+            <canvas id="chartProvDistAGB" height="210"></canvas>
+        </div>
+
+        <!-- Tab: อำเภอ -->
+        <div id="stab-district" class="stab-content">
+            <div class="chart-title-sm">พื้นที่ป่า 2562 vs 2566 — 10 อำเภอที่มีพื้นที่ป่ามากที่สุด (ha)</div>
+            <canvas id="chartDistrictForest" height="230"></canvas>
+            <div class="chart-title-sm" style="margin-top:14px;">AGB เฉลี่ย 2562 vs 2566 (Mg/ha)</div>
+            <canvas id="chartDistrictAGB" height="230"></canvas>
+        </div>
+
+        <!-- Tab: แบบจำลอง -->
+        <div id="stab-model" class="stab-content">
+            <div class="chart-title-sm">ความแม่นยำแบบจำลองจำแนกป่าไม้</div>
+            <div class="acc-grid2">
+                <div class="acc-card2"><div class="acc-lbl">Overall Accuracy<br>(Internal)</div><div class="acc-val">76.7%</div><div class="acc-sub">Kappa = 0.530</div></div>
+                <div class="acc-card2"><div class="acc-lbl">Overall Accuracy<br>(External)</div><div class="acc-val">79.0%</div><div class="acc-sub">Kappa = 0.579</div></div>
+                <div class="acc-card2"><div class="acc-lbl">Detection Rate<br>Deciduous</div><div class="acc-val">70.8%</div></div>
+                <div class="acc-card2"><div class="acc-lbl">Detection Rate<br>Evergreen</div><div class="acc-val">76.8%</div></div>
+            </div>
+            <div class="chart-title-sm" style="margin-top:12px;">AGB Regression Performance <span style="font-weight:400;color:#9ca3af;">(70/30 Holdout)</span></div>
+            <div class="acc-grid2" style="grid-template-columns:repeat(3,1fr);">
+                <div class="acc-card2"><div class="acc-lbl">R&#178;</div><div class="acc-val orange">0.549</div></div>
+                <div class="acc-card2"><div class="acc-lbl">RMSE</div><div class="acc-val orange">56.41</div><div class="acc-sub">Mg/ha</div></div>
+                <div class="acc-card2"><div class="acc-lbl">MAE</div><div class="acc-val orange">43.40</div><div class="acc-sub">Mg/ha</div></div>
+            </div>
+            <div class="acc-grid2" style="grid-template-columns:repeat(3,1fr);margin-top:6px;">
+                <div class="acc-card2"><div class="acc-lbl">n train</div><div class="acc-val" style="font-size:15px;">2,260</div></div>
+                <div class="acc-card2"><div class="acc-lbl">n test</div><div class="acc-val" style="font-size:15px;">1,006</div></div>
+                <div class="acc-card2"><div class="acc-lbl">Mean OBS</div><div class="acc-val" style="font-size:15px;">145.8</div><div class="acc-sub">Mg/ha</div></div>
+            </div>
+            <div class="chart-title-sm" style="margin-top:14px;">Feature Importance — Classifier (ประเภทป่าไม้)</div>
+            <canvas id="chartFeatureImportance" height="230"></canvas>
+            <div class="chart-title-sm" style="margin-top:14px;">Feature Importance — AGB Regressor</div>
+            <canvas id="chartFeatureImportanceRegressor" height="230"></canvas>
+        </div>
+
+        <!-- Tab: ความแม่นยำ -->
+        <div id="stab-accuracy" class="stab-content">
+            <div class="chart-title-sm">Confusion Matrix &#8211; External Validation <span style="font-weight:400;color:#9ca3af;">(n = 2,000)</span></div>
+            <p style="font-size:10px;color:#6b7280;margin:2px 0 6px;padding-left:6px;">จำแนก ป่าไม้ / ไม่ใช่ป่า — buffered 100 m จากจุด train</p>
+            <table class="cm-table">
+                <thead><tr><th>จริง &#8595; / ทำนาย &#8594;</th><th>ป่าไม้</th><th>ไม่ใช่ป่า</th></tr></thead>
+                <tbody>
+                    <tr><td class="cm-hd">ป่าไม้</td>      <td class="cm-diag">828</td><td>172</td></tr>
+                    <tr><td class="cm-hd">ไม่ใช่ป่า</td>   <td>249</td><td class="cm-diag">751</td></tr>
+                </tbody>
+            </table>
+            <div class="chart-title-sm" style="margin-top:14px;">Producer &amp; User Accuracy — External</div>
+            <table class="info-table">
+                <thead><tr><th>Class</th><th>Producer (PA)</th><th>User (UA)</th></tr></thead>
+                <tbody>
+                    <tr><td>ป่าไม้</td>      <td class="val-cell">82.8%</td><td class="val-cell">76.9%</td></tr>
+                    <tr><td>ไม่ใช่ป่า</td>   <td class="val-cell">75.1%</td><td class="val-cell">81.4%</td></tr>
+                </tbody>
+            </table>
+            <div class="chart-title-sm" style="margin-top:14px;">Detection Rate &#8211; ประเภทป่าไม้</div>
+            <table class="info-table">
+                <thead><tr><th>ประเภทป่า</th><th>Detection Rate</th></tr></thead>
+                <tbody>
+                    <tr><td>ป่าผลัดใบ (Deciduous)</td>    <td class="val-cell">70.8%</td></tr>
+                    <tr><td>ป่าไม่ผลัดใบ (Evergreen)</td> <td class="val-cell">76.8%</td></tr>
+                </tbody>
+            </table>
+            <div class="chart-title-sm" style="margin-top:14px;">Internal Validation <span style="font-weight:400;color:#9ca3af;">(70/30 Split)</span></div>
+            <table class="cm-table">
+                <thead><tr><th>จริง &#8595; / ทำนาย &#8594;</th><th>ป่าไม้</th><th>ไม่ใช่ป่า</th></tr></thead>
+                <tbody>
+                    <tr><td class="cm-hd">ป่าไม้</td>      <td class="cm-diag">1,739</td><td>499</td></tr>
+                    <tr><td class="cm-hd">ไม่ใช่ป่า</td>   <td>438</td><td class="cm-diag">1,351</td></tr>
+                </tbody>
+            </table>
+            <div class="chart-title-sm" style="margin-top:10px;">Producer &amp; User Accuracy — Internal</div>
+            <table class="info-table">
+                <thead><tr><th>Class</th><th>Producer (PA)</th><th>User (UA)</th></tr></thead>
+                <tbody>
+                    <tr><td>ป่าไม้</td>      <td class="val-cell">77.7%</td><td class="val-cell">79.9%</td></tr>
+                    <tr><td>ไม่ใช่ป่า</td>   <td class="val-cell">75.5%</td><td class="val-cell">73.0%</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div><!-- #stats-panel -->
+
+</div><!-- #main-wrap -->
+
+<!-- ===== Loading Overlay ===== -->
+<div id="shp-loader">
+    <div id="shp-loader-box">
+        <div class="loader-ring"></div>
+        <div id="loader-msg">กำลังเริ่มต้น...</div>
+        <div id="loader-sub">โหลดแผนที่ + Shapefile พร้อมกัน</div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
